@@ -22,29 +22,43 @@ class PostgreSQL:
         sql = "explain (analyse,format json)  " + sql
         result = self.run(sql)[0][0]
         return result
+    
+    def estimate(self,sql):
+        sql = "explain (format json) " + sql
+        result = self.run(sql)[0][0]
+        return result
 
 
-def get_plan(workload_path,plan_path):
+def get_plan(queries_path,plan_path):
     step = 0
-    with open(workload_path) as f:
+    with open(queries_path) as f:
         workload = f.readlines()
     plans = []
+    queries = []
     db = PostgreSQL(db_url)
     for query in workload:
-        plan =  db.explain(query)
-        plans.append(plan)
-        step+=1
-        if step%5==0:
-            print(step)
-    with open(plan_path) as f:
-        pickle.dump(plans,f)
+        estimate = db.estimate(query)
+        if estimate[0]['Plan']['Total Cost'] < 1e6:
+            print(step,query)
+            plan =  db.explain(query)
+            plans.append(plan)
+            queries.append(query)
+            step+=1
+    with open(plan_path,"wb") as f:
+        pickle.dump((queries,plans),f)
+    return 
     
 def parse_plan(plans):
     for plan in plans:
-        
+        traverse_plan(plan)
         pass
-             
-
+#Node type {'Gather Merge', 'Bitmap Heap Scan', 'Materialize', 'Merge Join', 'Seq Scan', 'Nested Loop', 'Bitmap Index Scan', 'Hash Join', 'Index Scan', 'Gather', 'Sort', 'Hash'}
+#Root node type {'Nested Loop', 'Gather', 'Merge Join', 'Index Scan', 'Hash Join', 'Seq Scan', 'Bitmap Heap Scan'}
+# TODO root #Root node type {'Nested Loop', 'Gather', 'Merge Join', 'Hash Join' } 
+# Join 
+def traverse_plan(plan):
+    
+    print(plan[0]['Plan']['Node Type'])
 
     
 if __name__ == "__main__":
