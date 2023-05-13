@@ -19,7 +19,7 @@ class PostgreSQL:
         return rows
     
     def explain(self, sql):
-        sql = "explain (analyse,format json)  " + sql
+        sql = "explain (analyse,verbose,format json)  " + sql
         result = self.run(sql)[0][0]
         return result
     
@@ -62,6 +62,8 @@ def traverse_plan(plan):
 
     
 if __name__ == "__main__":
-    pass
+    sql = "SELECT * FROM title t,movie_info mi,movie_info_idx mi_idx,movie_keyword mk WHERE t.id=mi.movie_id AND t.id=mi_idx.movie_id AND t.id=mk.movie_id AND t.kind_id=3 AND mk.keyword_id>121648;"
+    p=PostgreSQL(db_url)
+    print(p.explain(sql))
    
     

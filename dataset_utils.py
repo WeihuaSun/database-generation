@@ -1,169 +1,207 @@
-# Node type {'Gather Merge', 'Bitmap Heap Scan', 'Materialize', 'Merge Join', 
+# Node type {'Gather Meall_filterrge', 'Bitmap Heap Scan', 'Materialize', 'Merge Join',
 # 'Seq Scan', 'Nested Loop', 'Bitmap Index Scan', 'Hash Join', 'Index Scan', 'Gather', 'Sort', 'Hash'}
-#{'Hash Join', 'Merge Join', 'Gather Merge', 'Materialize', 'Hash', 'Gather', 'Bitmap Heap Scan', 
+# {'Hash Join', 'Merge Join', 'Gather Merge', 'Materialize', 'Hash', 'Gather', 'Bitmap Heap Scan',
 # 'Nested Loop', 'Seq Scan', 'Bitmap Index Scan', 'Index Scan'}
 
 
 class Constraint:
     def __init__(self):
+        self.all_filter = dict()
         self.filter = dict()
-        self.join = dict()
-    def add_filter(self, table, constraint, card):
-        constraint = ",".join(constraint)
-        if table in self.filter:
-            self.filter[table].add(constraint, card)
+        self.join = []
+        self.join_tree = []
+
+    def add(self,node):
+        if isinstance(node,FilterNode):
+            if node.type:
+                if node.table in self.filter:
+                    self.filter[node.table].append(node)
+                else:
+                    self.filter[node.table] = [node]
+            
+            if node.table in self.all_filter:
+                self.all_filter[node.table].append(node)
+            else:
+                self.all_filter[node.table] = [node]
+                
+        if isinstance(node,JoinNode):
+            self.join.append(node)
+    def add_join_tree(self,node):
+        self.join_tree.append(node)
+            
+class FilterNode(object):
+    def __init__(self, table, cond, card, type=True):
+        self.table = table
+        self.cond = cond
+        self.card = card
+        self.type = type
+
+
+class JoinNode(object):
+    def __init__(self, card, left=None, right=None, cond=None):
+        self.left = left
+        self.right = right
+        self.cond = cond
+        self.card = card
+        if self.left is None:
+            self.type = 'leaf'
         else:
-            item = Filter()
-            item.add(constraint, card)
-            self.filter[table] = item
-
-    def add_join(self, type, constraint, card):
-        if type in self.constraints_multi_table.keys():
-            self.constraints_multi_table[type].add(constraint, card)
-        else:
-            item = getattr()
+            self.type = 'inner'
+        return self
 
 
-class Filter:
-    def __init__(self):
-        self.predicates = dict()
-
-    def add(self, predicate, card):
-        if predicate not in self.predicates.keys():
-            self.predicates[predicate] = card
+class LeafNode(object):
+    def __init__(self, table,cond=None):
+        self.table = table
+        self.cond = cond
+    
 
 
-class Join:
-    def __init__(self):
-        self.joins = dict()
+def traversePlan(plan, constraint):
+    children = []
+    if 'Plans' in plan:
+        for child in plan['Plans']:
+            children.append(traversePlan(child, constraint))
+    result = Operator().step(plan,children,constraint)
+    if isinstance(result, JoinNode):
+        constraint.add_join_tree(result)
+    return result
 
-    def add(self, join, card):
-        if join not in self.joins:
-            self.joins[join] = card
 
 class Operator:
     def __init__(self) -> None:
         pass
 
-    def step(self, plan, constraints):
+    def step(self, plan, child, constraint):
         name = plan['Node Type']
-        assert name in  ['Gather Merge', 'Bitmap Heap Scan', 'Materialize', 'Merge Join', 
-                         'Seq Scan', 'Nested Loop', 'Bitmap Index Scan', 'Hash Join', 'Index Scan', 'Gather', 'Sort', 'Hash']
+        assert name in ['Gather Merge', 'Bitmap Heap Scan', 'Materialize', 'Merge Join',
+                        'Seq Scan', 'Nested Loop', 'Bitmap Index Scan', 'Hash Join', 'Index Scan', 'Gather', 'Sort', 'Hash']
         name = "_".join(name.split("\s"))
-        return getattr(self, name, plan, constraints)
-    
-    #顺序扫描Seq Scan
-    def seq_scan(self, plan, constraints):
-        card = plan['Actual Rows']
-        table = plan['Relation Name']
-        filter = plan['Filter'].split(" AND ") # keyword_id > 2484 [AND ...]
-        constraints.add_filter(table, filter, card)
-        return table
-    
-    #索引扫描Index Scan
-    def index_scan(self, plan, constraints):
-        card = plan['Actual Rows']
-        table = plan['Relation Name']
-        cond = plan['Index Cond']
-        constraint = []
-        constraint.append(cond)
-        try:
-            filter = plan['Filter']
-            remove_by_filter = plan['Rows Removed by Filter']
-            constraints.add_filter(table, constraint, card+remove_by_filter)
-            constraint.append(filter)
-        except:
-            pass
-        constraints.add_filter(table, constraint, card)
-        return table
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    def gather_merge(self,plan,constraints):
-        pass
-    
-    def bitmap_heap_scan(self, plan, constraints):
-        card = plan['Actual Rows']
-        table = plan['Relation Name']
-        constraint = []
-        cond = plan['Recheck Cond']
-        constraint.append(cond)
-        try:
-            filter = plan['Filter']
-            remove_by_filter = plan['Rows Removed by Filter']
-            constraints.add_single(table, constraint,
-                                   card+remove_by_filter)
-            constraint.append(filter)
-        except:
-            pass
-        constraints.add_single(table, constraint, card)
-        return table
-   
-    def materialize(self, plan, constraints):
-        pass 
-    
-    def index_scan(self, plan, constraints):
-        card = plan['Actual Rows']
-        table = plan['Relation Name']
-        constraint = []
-        cond = plan['Index Cond']
-        constraint.append(cond)
-        try:
-            filter = plan['Filter']
-            remove_by_filter = plan['Rows Removed by Filter']
-            constraints.add_single(table, constraint,
-                                   card+remove_by_filter)
-            constraint.append(filter)
-        except:
-            pass
-        constraints.add_single(table, constraint, card)
-        return table
+        return getattr(self, name, plan, child, constraint)
 
-    def bitmap_index_scan(self, plan, constraints):
-        card = plan['Actual Rows']
+    # 顺序扫描Seq Scan
+    def seq_scan(self, plan, child, constraint):
+        cond = []
         table = plan['Relation Name']
-        constraint = []
-        constraint.append(plan['Index Cond'])
-        constraints.add_single(table, constraint, card)
-        return table
+        if plan['Parallel Aware']:  # 并行
+            card = plan['Actual Rows']*plan['Actual Loops']
+            est = True
+        else:
+            card = plan['Actual Rows']
+            est = False
+        if 'Filter' in plan:
+            cond = plan['Filter'].split(" AND ")
+        node = FilterNode(table, cond, card, est)
+        constraint.add(node)
+        return node
 
-
-
-    def nested_loop(self,plan,constraints,children):
-        card = plan['Actual Rows']
-        join = []
-        for child in children:
-            if isinstance(child,tuple):
-                cond = child[0]
-                conds = cond.split("=")
-                left_attr = conds[0]
-                right_attr = conds[1].split(".")[1]
-                right_table = child[1]
+    # 索引扫描Index Scan
+    def index_scan(self, plan, child, constraint):
+        table = plan['Relation Name']
+        if 'Index Cond' in plan:
+            cond = plan['Index Cond']
+            card = plan['Actual Rows']
+            
+            if plan['Parallel Aware']:  # 并行
+                est = True
+                factor = plan['Actual Loops']
             else:
-                left_table = child
-        join.append((left_table,left_attr))
-        join.append((right_table,right_attr))
-        constraints.add_multi(join,card)
-                
-        pass
+                est = False
+                factor = 1
 
-    def merge_join():
-        pass
+            if cond[-2].isnumeric():
+                cond = [cond]
+                if 'Filter' in plan:
+                    remove_by_filter = plan['Rows Removed by Filter']
+                    node = FilterNode(table,cond,(card+remove_by_filter)*factor,cond)
+                    constraint.add(node)
+                    cond += plan['Filter'].split(" AND ")
+                node = FilterNode(table,cond,card*factor,est)
+                constraint.add(node)
+            else:#Nested Loop Join condition
+                node = LeafNode(table,cond)
+        else:#Other Join condition
+            node = LeafNode(table)
+        return node
 
-    def hash_join():
-        pass
-    
-    def gather():
-        pass
-    
-    def sort():
-        pass
-    
-    def hash():
-        pass
+    # 位图哈希扫描
+    def bitmap_heap_scan(self, plan, constraint, child):
+        card = child[0].card
+        table = plan['Relation Name']
+        cond = [plan['Recheck Cond']]
+        if 'Filter' in plan:
+            filter = plan['Filter'].split(" AND ")
+            remove_by_filter = plan['Rows Removed by Filter']
+            node = FilterNode(table,cond,card+remove_by_filter)
+            constraint.add(node)
+            cond += filter
+        node = FilterNode(table,cond,node)
+        constraint.add(node)
+        return node
+
+    # 位图索引扫描
+    def bitmap_index_scan(self, plan, constraint, child):
+        card = plan['Actual Rows']
+        table = plan['Relation Name']
+        cond = [plan['Index Cond']]
+        node = FilterNode(table,cond,card)
+        constraint.add(node)
+        return node
+
+    #嵌套循环连接
+    def nested_loop(self, plan, constraints, child):
+        if "Parallel False': False" in str(plan):
+            factor = 1
+        else:
+            factor = plan['Actual Loops']
+        card = plan['Actual Rows']*factor
+        node = JoinNode(card, child[0], child[1], child[1].cond)
+        constraints.add(node)
+        return node
+
+    def merge_join(self, plan, constraints, child):
+        if "Parallel False': False" in str(plan):
+            factor = 1
+        else:
+            factor = plan['Actual Loops']
+        card = plan['Actual Rows']*factor
+        cond = plan['Merge Cond']
+        node = JoinNode(card, child[0], child[1], cond)
+        constraints.add(node)
+        return node
+
+    def hash_join(self, plan, constraints, child):
+        if "Parallel False': False" in str(plan):
+            factor = 1
+        else:
+            factor = plan['Actual Loops']
+        card = plan['Actual Rows']*factor
+        cond = plan['Hash Cond']
+        node = JoinNode(card, child[0], child[1], cond)
+        constraints.add(node)
+        return node
+
+    # 排序
+    def sort(self, plan, child):
+        child.card = plan['Actual Rows']
+        return child
+
+    # 哈希
+    def hash(self, plan, child):
+        child.card = plan['Actual Rows']
+        return child
+
+    #
+    def gather_merge(self, plan, child):
+        child.card = plan['Actual Rows']
+        return child
+
+    #
+    def gather(self, plan, child):
+        child.card = plan['Actual Rows']
+        return child
+
+    # 物化
+    def materialize(self, plan, child):
+        child.card = plan['Actual Rows']
+        return child

@@ -7,6 +7,7 @@ import pandas as pd
 
 def check_node(plan, nodetype):
     head = plan['Node Type']
+    
     if head == 'Hash':
         print(plan)
     nodetype.add(head)
@@ -15,15 +16,20 @@ def check_node(plan, nodetype):
             check_node(child, nodetype)
     except:
         pass
+    
 
 def check_type(plan, type, nodes,query=None):
     head = plan['Node Type']
-    #para = plan['Parallel Aware']
-    if head == type:
-        print(plan)
-        if query is not None:
-            print(query)
-        nodes.append(plan)
+    para = plan['Parallel Aware']
+    loops = plan ['Actual Loops']
+    #if  para and loops!=1:
+    
+    if head == type and loops!=1 and "Parallel False': False" in str(plan):
+        #if plan['Index Cond'][-2].isnumeric():
+            print(str(plan))
+            if query is not None:
+                print(query)
+            nodes.append(plan)
     try:
         for child in plan['Plans']:
             check_type(child, type, nodes,query)
@@ -55,7 +61,7 @@ if __name__ == "__main__":
     for i,plan in enumerate(nodes):
         #traversePlan(plan)
         plan = plan[0]['Plan']
-        check_type(plan,'Seq Scan' ,typenodes,q[i])#,Seq Scan,Index Scan,'Sort'
+        check_type(plan,'Nested Loop' ,typenodes,q[i])#,Seq Scan,Index Scan,'Sort','Hash','Bitmap Index Scan','Bitmap Heap Scan'
         #check_node(plan,nodetype)
     with open("temp.txt","w") as f:
         f.write("\n".join([str(node) for node in typenodes]))
