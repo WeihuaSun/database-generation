@@ -1,4 +1,7 @@
 
+import re
+
+
 class Constraint:
     def __init__(self):
         self.all_filter = dict()
@@ -25,12 +28,14 @@ class Constraint:
     def add_join_tree(self, node):
         self.join_tree.append(node)
 
+
 class FilterNode(object):
     def __init__(self, table, cond, card, type=True):
         self.table = table
         self.cond = cond
         self.card = card
         self.type = type
+
 
 class JoinNode(object):
     def __init__(self, card, left=None, right=None, cond=None):
@@ -43,10 +48,12 @@ class JoinNode(object):
         else:
             self.type = 'inner'
 
+
 class LeafNode(object):
     def __init__(self, table, cond=None):
         self.table = table
         self.cond = cond
+
 
 class Operator:
     def __init__(self) -> None:
@@ -72,7 +79,7 @@ class Operator:
         if 'Filter' in plan:
             cond = plan['Filter'].split(" AND ")
         node = FilterNode(table, cond, card, est)
-        if len(cond)>0:
+        if len(cond) > 0:
             constraint.add(node)
         return node
 
@@ -95,7 +102,7 @@ class Operator:
                 if 'Filter' in plan:
                     remove_by_filter = plan['Rows Removed by Filter']
                     node = FilterNode(
-                        table, cond, (card+remove_by_filter)*factor,est)
+                        table, cond, (card+remove_by_filter)*factor, est)
                     constraint.add(node)
                     cond += plan['Filter'].split(" AND ")
                 node = FilterNode(table, cond, card*factor, est)
@@ -118,7 +125,7 @@ class Operator:
             constraint.add(node)
             cond += filter
         node = FilterNode(table, cond, card)
-        if len(cond)>0:
+        if len(cond) > 0:
             constraint.add(node)
         return node
 
@@ -128,7 +135,7 @@ class Operator:
         #table = plan['Relation Name']
         cond = [plan['Index Cond']]
         node = FilterNode(None, cond, card)
-        #constraint.add(node)
+        # constraint.add(node)
         return node
 
     # 嵌套循环连接
@@ -189,6 +196,7 @@ class Operator:
         child[0].card = plan['Actual Rows']
         return child[0]
 
+
 def traversePlan(plan, constraint):
     children = []
     if 'Plans' in plan:
@@ -196,5 +204,93 @@ def traversePlan(plan, constraint):
             ret = traversePlan(child, constraint)
             children.append(ret)
     result = Operator().step(plan, children, constraint)
-
     return result
+
+
+def parse_plan(nodes, ranges, schema):
+    constraint = Constraint()
+    for plan in nodes:
+        result = traversePlan(plan, constraint)
+        if isinstance(result, JoinNode):
+            constraint.add_join_tree(result)
+    normalize_filter(constraint, ranges)
+    hypercube_dict = package_filter(constraint.all_filter, schema, ranges)
+    return constraint, hypercube_dict
+
+
+def normalize_filter(constraint, ranges):
+    filters = constraint.all_filter
+    regex = r"([a-z_]*)\s(<|>|<=|>=|=|!=)\s([0-9]*)"
+    for t in ranges.keys():  # constraint list
+        curcon = []
+        t_filter = []
+        for f in filters[t][:]:
+            conds = f.cond[:]
+            f.cond = []
+            for cond in conds:
+                rm = re.search(regex, cond)
+                col, op, val = rm.group(1), rm.group(2), rm.group(3)
+                val = float(val)
+                f.cond.append([col, op, val])
+            f.cond.sort()
+            if f.cond not in curcon:
+                curcon.append(f.cond)
+                t_filter.append(f)
+        filters[t] = t_filter
+
+
+class Hypercube(object):
+    def __init__(self, hyperrange, card):
+        self.hyperrange = hyperrange
+        self.card = card
+
+
+def fill_hypercube(hyper, op, val, i):
+    min_val, max_val = hyper[i]
+    if op == "=":
+        if val < min_val or val > max_val:
+            return False
+        else:
+            hyper[i] = (val, val)
+    elif op == ">":
+        if val < min_val:
+            hyper[i] = (min_val,max_val)
+        elif val >= max_val:
+            return False
+        else:
+            hyper[i] = (val+1, max_val)
+       
+    elif op == "<":
+        if val > max_val:
+            hyper[i] = (min_val,max_val)
+        elif val <= min_val:
+            return False
+        else:
+            hyper[i] = (min_val, val-1)
+    return True
+   
+
+
+def package_filter(filter, schema, ranges):
+    hypercube_dict = dict()
+    for t in schema.keys():
+        attrs = schema[t]  # attr list
+        hypercube_dict[t] = []  # 超立方体列表
+        for f in filter[t][:]:  # constraint list
+            flag = True
+            hyperrange = [ranges[t][a] for a in attrs]
+            conds = f.cond
+            for cond in conds:
+                col, op, val = cond[0], cond[1], cond[2]
+                i = attrs.index(col)
+                if not fill_hypercube(hyperrange, op, val, i):
+                    flag = False
+                    break
+            if flag:      
+                for i, attr in enumerate(attrs):
+                    min, max = ranges[t][attr]
+                    hyperrange[i] = ((hyperrange[i][0]-min)/(max-min),
+                                    ((hyperrange[i][1]-min))/(max-min))
+                hypercube = Hypercube(hyperrange, f.card)
+                hypercube_dict[t].append(hypercube)
+    return hypercube_dict
