@@ -1,12 +1,10 @@
 import matplotlib.pyplot as plt
 
 def draw(rectangle):
-
-
     rect = plt.Rectangle((0.1,0.1),0.5,0.3)
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    for i,hyper in enumerate (rectangle[:20]):
+    for i,hyper in enumerate (rectangle):
         xrange = hyper.hyperrange[0]
 
         yrange = hyper.hyperrange[1]
@@ -16,13 +14,38 @@ def draw(rectangle):
         clos = ['r','g','blue','yellow']
         hatchs = ['/' ,'\\', '|', '-']
         rect = plt.Rectangle(site,x,y,
-                             alpha = 0.1,fill=True,lw=1,edgecolor = 'black',fc = clos[i%4],hatch=hatchs[i%4])
+                             alpha = 0.1,fill=False,lw=1,edgecolor = 'black')#,fc = clos[i%4]hatch=hatchs[i%4]
         ax.add_patch(rect)
     plt.xlim(0,1.1)
     plt.ylim(0,1.1)
-    plt.savefig("1.png")
+    plt.savefig("1.png",dpi = 400)
 
-
+def draw_tree(hist):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    i=0
+    tratree(hist,ax,i=0)
+    plt.xlim(0,1.1)
+    plt.ylim(0,1.1)
+    plt.savefig("2.svg",dpi = 1000,format='svg')
+    plt.savefig("2.png",dpi = 200)
+    
+def tratree(tree,ax,i):
+    if i > 5:
+        return
+    clos = ['r','g','blue','yellow']
+    hatchs = ['/' ,'\\', '|', '-']
+    site = tuple(tree.mins)
+    high = tree.maxs[0]-tree.mins[0]
+    width = tree.maxs[1]-tree.mins[1]
+    rect = plt.Rectangle(site,high,width,
+                             alpha = 0.1,fill=True,lw=1,edgecolor = 'black',fc = clos[i%4])
+    
+    ax.add_patch(rect)
+    for child in tree.children:
+        i=i+1
+        tratree(child,ax,i)
+    
 
 
 def check_node(plan, nodetype):

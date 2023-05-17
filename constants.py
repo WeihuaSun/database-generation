@@ -11,7 +11,8 @@ imdb_schema = {
     'movie_keyword': ['keyword_id'],
     'movie_info_idx': ['info_type_id'],
     'movie_companies': ['company_id', 'company_type_id'],
-    'cast_info': ['role_id', 'person_id'], }
+    'cast_info': ['role_id', 'person_id'], 
+    }
 
 ranges = {
     'title': {'kind_id': (1, 7), 'production_year': (1880, 2019)},

@@ -1,4 +1,4 @@
-import re
+""" import re
 regex = r"([a-z_]*)\s(<|>|<=|>=|=|!=)\s([0-9]*)"
 
 test = '(production_year > 2010)'
@@ -23,4 +23,5 @@ l.append(id1)
 id2 = [[col2,op2,int(val2)],[col1,op1,int(val1)]]
 
 print(id2 in l)
-print(float('2'))
+print(float('2')) """
+print(tuple([1,2,]+[1,2]))

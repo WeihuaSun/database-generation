@@ -4,9 +4,10 @@ from dataset_utils import Constraint, parse_plan, JoinNode
 from pathlib import Path
 import pandas as pd
 import pickle
-from debug import check_type,draw
+from debug import check_type,draw,draw_tree
 import constants
-
+from hist import generate_tree
+from stholes import generate_hist
 if __name__ == "__main__":
     plan_path = Path("./data/plan")
     plan_file = plan_path / "train_plan_part0.csv"
@@ -20,7 +21,10 @@ if __name__ == "__main__":
     typenodes = []
     constraint,hyper_dict = parse_plan(nodes,constants.ranges,constants.imdb_schema)
     draw(hyper_dict['title'])
+    #generate_tree(hyper_dict['title'],4,2528312)
+    hist = generate_hist([0,0],[1,1],hyper_dict['title'],2528312)
     
+    draw_tree(hist.children[0].children[0])
     
     """ for i, plan in enumerate(nodes):
         # traversePlan(plan)
