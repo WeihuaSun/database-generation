@@ -270,7 +270,6 @@ def fill_hypercube(hyper, op, val, i):
     return True
    
 
-
 def package_filter(filter, schema, ranges):
     hypercube_dict = dict()
     for t in schema.keys():

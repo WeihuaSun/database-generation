@@ -23,28 +23,27 @@ def draw(rectangle):
 def draw_tree(hist):
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    i=0
-    tratree(hist,ax,i=0)
+    children_list = []
+    tratree(hist,ax,children_list)
     plt.xlim(0,1.1)
     plt.ylim(0,1.1)
     plt.savefig("2.svg",dpi = 1000,format='svg')
     plt.savefig("2.png",dpi = 200)
+    print(len(children_list))
     
-def tratree(tree,ax,i):
-    if i > 5:
-        return
+def tratree(tree,ax,children_list):
+    children_list.append(tree)
     clos = ['r','g','blue','yellow']
     hatchs = ['/' ,'\\', '|', '-']
     site = tuple(tree.mins)
     high = tree.maxs[0]-tree.mins[0]
     width = tree.maxs[1]-tree.mins[1]
     rect = plt.Rectangle(site,high,width,
-                             alpha = 0.1,fill=True,lw=1,edgecolor = 'black',fc = clos[i%4])
-    
+                             alpha = 0.1,fill=True,lw=1,edgecolor = 'black',fc = clos[len(children_list)%4])
     ax.add_patch(rect)
     for child in tree.children:
-        i=i+1
-        tratree(child,ax,i)
+
+        tratree(child,ax,children_list)
     
 
 

@@ -24,7 +24,7 @@ if __name__ == "__main__":
     #generate_tree(hyper_dict['title'],4,2528312)
     hist = generate_hist([0,0],[1,1],hyper_dict['title'],2528312)
     
-    draw_tree(hist.children[0].children[0])
+    draw_tree(hist.children[0])
     
     """ for i, plan in enumerate(nodes):
         # traversePlan(plan)
