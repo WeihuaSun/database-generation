@@ -18,17 +18,16 @@ def draw(rectangle):
         ax.add_patch(rect)
     plt.xlim(0,1.1)
     plt.ylim(0,1.1)
-    plt.savefig("1.png",dpi = 400)
+    plt.savefig("-1.png",dpi = 400)
 
-def draw_tree(hist):
+def draw_tree(hist,num = 0):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     children_list = []
     tratree(hist,ax,children_list)
     plt.xlim(0,1.1)
     plt.ylim(0,1.1)
-    plt.savefig("2.svg",dpi = 1000,format='svg')
-    plt.savefig("2.png",dpi = 200)
+    plt.savefig(f"{num}.png",dpi = 200)
     print(len(children_list))
     
 def tratree(tree,ax,children_list):
