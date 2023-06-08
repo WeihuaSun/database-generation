@@ -14,13 +14,13 @@ imdb_schema = {
     'cast_info': ['role_id', 'person_id'], 
     }
 
-ranges = {
+imdb_ranges = {
     'title': {'kind_id': (1, 7), 'production_year': (1880, 2019)},
     'movie_info': {"info_type_id": (1, 110)},
     'movie_keyword': {'keyword_id': (1, 134170)},
     'movie_info_idx': {'info_type_id': (99, 113)},
     'movie_companies': {'company_id': (1, 234997), 'company_type_id': (1, 2)},
-    'cast_info': {'role_id': (1, 11), 'person_id': (1, 4061926), }
+    'cast_info': {'role_id': (0, 11), 'person_id': (0, 4061926), }
 }
 
 

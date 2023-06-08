@@ -48,9 +48,8 @@ def tratree(tree,ax,children_list):
 
 def check_node(plan, nodetype):
     head = plan['Node Type']
-    
-    if head == 'Hash':
-        print(plan)
+    """ if head == 'Hash':
+        print(plan) """
     nodetype.add(head)
     try:
         for child in plan['Plans']:
@@ -61,11 +60,10 @@ def check_node(plan, nodetype):
 
 def check_type(plan, type, nodes,query=None):
     head = plan['Node Type']
-    para = plan['Parallel Aware']
     loops = plan ['Actual Loops']
     #if  para and loops!=1:
     
-    if head == type and loops!=1:
+    if head == type and loops==1:
         #if plan['Index Cond'][-2].isnumeric():
             print(str(plan))
             if query is not None:
@@ -76,7 +74,6 @@ def check_type(plan, type, nodes,query=None):
             check_type(child, type, nodes,query)
     except:
         pass
-
 
 
 

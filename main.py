@@ -1,42 +1,26 @@
 
 import json
-from dataset_utils import Constraint, parse_plan, JoinNode
+from dataset_utils import parse_plan
 from pathlib import Path
-import pandas as pd
-import pickle
-from debug import check_type,draw,draw_tree
+from debug import check_type,draw,draw_tree,check_node
 import constants
+from data_prepare import get_plan
+from isomer import construct,lp
 
-from isomer import construct
+def run(plan_file,ranges,schema):
+    df = get_plan(plan_file)
+    plans = [json.loads(plan)['Plan'] for plan in df['json']]
+    constraint = parse_plan(plans,ranges,schema,)
+    hist = construct(constraint.filter['cast_info'],[0,0], [11,4061926], 1000)
+    print("construct_over")
+    #draw_tree(hist,"mi")
+    lp(constraint.filter['cast_info'],hist)
+
+
 if __name__ == "__main__":
     plan_path = Path("./data/plan")
-    plan_file = plan_path / "train_plan_part0.csv"
-    sacle_file = plan_path / "scale.pkl"
-    nodetype = set()
-    df = pd.read_csv(plan_file)
-    nodes = [json.loads(plan)['Plan'] for plan in df['json']]
-    """ with open(sacle_file,"rb") as f:
-        q,nodes = pickle.load(f)  """
-    constraint = Constraint()
-    typenodes = []
-    constraint,hyper_dict = parse_plan(nodes,constants.ranges,constants.imdb_schema)
-    draw(hyper_dict['title'])
-    #generate_tree(hyper_dict['title'],4,2528312)
-    #hist = generate_hist([0,0],[1,1],hyper_dict['title'],2528312)
-    hist = construct(hyper_dict['title'], [0, 0], [1, 1], 1000)
-    draw_tree(hist,100)
-    """ for i,c in enumerate(hist.children) :
-        print("num",i)
-        draw_tree(c,i) """
+    plan_file = plan_path / "synthetic_plan.csv"
+    run(plan_file,constants.imdb_ranges,constants.imdb_schema)
     
-    """ for i, plan in enumerate(nodes):
-        # traversePlan(plan)
-        #plan = plan[0]['Plan']
-        result = traversePlan(plan, constraint)
-        if isinstance(result, JoinNode):
-            constraint.add_join_tree(result)
-        # check_type(plan,'Bitmap Index Scan' ,typenodes,q[i]) #,Seq Scan,Index Scan,'Sort','Hash','Bitmap Index Scan','Bitmap Heap Scan'
-        # check_node(plan,nodetype) """
 
-    """ with open("temp.txt","w") as f:
-        f.write("\n".join([str(node) for node in typenodes])) """
+    
