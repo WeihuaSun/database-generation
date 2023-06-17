@@ -310,7 +310,7 @@ def lp(quries, hist):
         i += 1
 
     print(vs)
-    est_error = 0
+    """ est_error = 0
     err_q = []
     for i, query in enumerate(quries):
         q = Bucket(query.mins, query.maxs)
@@ -318,21 +318,19 @@ def lp(quries, hist):
         real_card = query.card
         if real_card != est_card:
             est_error += 1
-            print("Error:", est_card-real_card)
-            err_q.append(query)
-    if err_q:
+            #print("Error:", est_card-real_card)
+            err_q.append(query) """
+    """ if err_q:
         for q in err_q:
             quries.remove(q)
-        lp(quries, hist)
-    print("EstError:", est_error)
+        lp(quries, hist) """
+    #print("EstError:", est_error)
 
 
-def lp_cpx(queries, hist):
+""" def lp_cpx(queries, hist):
     opt_model = cpx.Model(name="Data Model")
-    x_vars  = 
-{(i,j): opt_model.integer_var(lb=l[i,j], ub= u[i,j],
-                              name="x_{0}_{1}".format(i,j)) 
-for i in set_I for j in set_J}
+    x_vars  = {(i,j): opt_model.integer_var(lb=0,name="x_{0}_{1}".format(i,j)) 
+        for i in set_I for j in set_J} """
 
 """ def repart(hist):
     freq = 0
